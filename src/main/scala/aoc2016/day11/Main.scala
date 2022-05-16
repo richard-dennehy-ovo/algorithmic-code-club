@@ -3,7 +3,6 @@ package aoc2016.day11
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.annotation.tailrec
-import scala.collection.SortedSet
 import scala.io.Source
 
 object Main {
@@ -26,23 +25,31 @@ object Main {
 //    val state10 = state9.nextStates.head
 //    val state11 = state10.nextStates.head
 
-    // attempt A*
+    val start = Instant.now
+
+    // sort of breadth-first
     @tailrec
-    def search(candidates: SortedSet[State], iteration: Int): State = {
-      val best = candidates.head
-      println(s"searching ${candidates.size} candidates; chose ${best.generation}, ${best.weight}")
+    def search(currentCandidates: Vector[State], futureCandidates: Vector[State], iteration: Int): State = {
+      val (best, rest) = (currentCandidates.head, currentCandidates.tail)
+      val elapsed = ChronoUnit.MILLIS.between(start, Instant.now)
+      println(s"iteration $iteration: searching ${currentCandidates.size} candidates; chose g${best.generation}, w${best.weight}; elapsed ${elapsed.toFloat / 1000.0}s")
       if (best.weight == 0) {
         println(s"found in $iteration iterations")
         best
       } else {
         val next = best.nextStates
-        val nextCandidates = candidates.drop(1) ++ next
-        search(nextCandidates, iteration + 1)
+        if (rest.isEmpty) {
+          val newCandidates = (futureCandidates ++ next).toArray
+          java.util.Arrays.parallelSort(newCandidates, State.ordering)
+
+          search(newCandidates.toVector, Vector.empty, iteration + 1)
+        } else {
+          search(rest, futureCandidates ++ next, iteration + 1)
+        }
       }
     }
 
-    val start = Instant.now
-    val result = search(SortedSet(State.parse(input)), 0)
+    val result = search(Vector(State.parse(input)), Vector.empty, 0)
     val elapsed = ChronoUnit.MILLIS.between(start, Instant.now)
     println(s"best: ${result.generation} in ${elapsed.toFloat / 1000.0} seconds")
   }
@@ -84,7 +91,7 @@ case class State(
     }
   }
 
-  def nextStates: SortedSet[State] = {
+  def nextStates: Vector[State] = {
     val singles = floors(elevatorPosition)
     val pairs = singles.combinations(2).toVector
 
@@ -118,8 +125,8 @@ case class State(
       Vector.empty
     }
 
-    SortedSet.from((moveUp ++ moveDown)
-      .filter(_.isValid))
+    (moveUp ++ moveDown)
+      .filter(_.isValid)
       .filterNot(state => state.hash == previousHashed)
   }
 
@@ -148,10 +155,19 @@ object State {
     State(floors)
   }
 
-  implicit val ordering: Ordering[State] = Ordering.fromLessThan {
+  implicit val ordering: Ordering[State] = prioritiseGeneration
+
+  lazy val prioritiseGeneration: Ordering[State] = Ordering.fromLessThan {
     case (s1, s2) if s1.generation < s2.generation => true
     case (s1, s2) if s1.generation == s2.generation && s1.weight < s2.weight => true
     case (s1, s2) if s1.generation == s2.generation && s1.weight == s2.weight => s1.## < s2.##
+    case _ => false
+  }
+
+  lazy val prioritiseWeight: Ordering[State] = Ordering.fromLessThan {
+    case (s1, s2) if s1.weight < s2.weight => true
+    case (s1, s2) if s1.weight == s2.weight && s1.generation < s2.generation => true
+    case (s1, s2) if s1.weight == s2.weight && s1.generation == s2.generation => s1.## < s2.##
     case _ => false
   }
 }
