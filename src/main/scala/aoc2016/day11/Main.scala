@@ -3,13 +3,13 @@ package aoc2016.day11
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.annotation.tailrec
-import scala.collection.immutable.HashSet
+import scala.collection.SortedSet
 import scala.io.Source
 
 object Main {
   def main(args: Array[String]): Unit = {
     val input = Source
-      .fromResource("2016/11/example.txt")
+      .fromResource("2016/11/part 1.txt")
       .getLines()
       .toVector
 
@@ -28,30 +28,30 @@ object Main {
 
     // attempt A*
     @tailrec
-    def search(candidates: Vector[State]): State = {
-      println(s"searching ${candidates.length} candidates")
+    def search(candidates: SortedSet[State], iteration: Int): State = {
       val best = candidates.head
+      println(s"searching ${candidates.size} candidates; chose ${best.generation}, ${best.weight}")
       if (best.weight == 0) {
+        println(s"found in $iteration iterations")
         best
       } else {
         val next = best.nextStates
         val nextCandidates = candidates.drop(1) ++ next
-        val sorted = nextCandidates.sortWith { case (s1, s2) =>
-          s1.generation < s2.generation || (s1.generation == s2.generation && s1.weight < s2.weight)
-        }
-        search(sorted)
+        search(nextCandidates, iteration + 1)
       }
     }
 
-    val result = search(Vector(State.parse(input)))
-    println(result.generation)
+    val start = Instant.now
+    val result = search(SortedSet(State.parse(input)), 0)
+    val elapsed = ChronoUnit.MILLIS.between(start, Instant.now)
+    println(s"best: ${result.generation} in ${elapsed.toFloat / 1000.0} seconds")
   }
 }
 
 case class State(
     elevatorPosition: Int,
     floors: Vector[Vector[Component]],
-    previous: HashSet[Int],
+    previousHashed: Int,
     generation: Int
 ) {
   val weight: Int = floors.zipWithIndex.map { case (components, floorNumber) =>
@@ -84,7 +84,7 @@ case class State(
     }
   }
 
-  def nextStates: Vector[State] = {
+  def nextStates: SortedSet[State] = {
     val singles = floors(elevatorPosition)
     val pairs = singles.combinations(2).toVector
 
@@ -95,7 +95,7 @@ case class State(
         floors
           .updated(p, floors(p).filterNot(components.contains))
           .updated(to, floors(to) ++ components),
-        previous + hash,
+        hash,
         generation + 1
       )
     }
@@ -118,10 +118,9 @@ case class State(
       Vector.empty
     }
 
-    (moveUp ++ moveDown)
-      .filter(_.isValid)
-      .filterNot(state => previous.contains(state.hash))
-      .sortBy(_.weight)
+    SortedSet.from((moveUp ++ moveDown)
+      .filter(_.isValid))
+      .filterNot(state => state.hash == previousHashed)
   }
 
   def hash: Int = (elevatorPosition, floors).hashCode()
@@ -129,24 +128,31 @@ case class State(
 
 object State {
   def apply(floors: Vector[Vector[Component]]): State =
-    State(0, floors, HashSet.empty, 0)
+    State(0, floors, 0, 0)
 
   def parse(input: Vector[String]): State = {
     val floors = input.map { description =>
       description
-        .dropRight(1)
         .split(' ')
         .sliding(2)
         .flatMap {
-          case Array(element, "microchip") =>
+          case Array(element, kind) if kind.startsWith("microchip") =>
             Some(Component.Microchip(element.dropRight("-compatible".length)))
-          case Array(element, "generator") => Some(Component.Generator(element))
-          case _                           => None
+          case Array(element, kind) if kind.startsWith("generator") =>
+            Some(Component.Generator(element))
+          case _ => None
         }
         .toVector
     }
 
     State(floors)
+  }
+
+  implicit val ordering: Ordering[State] = Ordering.fromLessThan {
+    case (s1, s2) if s1.generation < s2.generation => true
+    case (s1, s2) if s1.generation == s2.generation && s1.weight < s2.weight => true
+    case (s1, s2) if s1.generation == s2.generation && s1.weight == s2.weight => s1.## < s2.##
+    case _ => false
   }
 }
 
