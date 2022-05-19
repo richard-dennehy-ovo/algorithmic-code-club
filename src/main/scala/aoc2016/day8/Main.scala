@@ -26,7 +26,7 @@ object Main {
   private def challenge(): Screen = {
     val input =
       Source
-        .fromResource("day 8 input.txt")
+        .fromResource("2016/8/part 1.txt")
         .getLines()
         .map(Command.parse)
 

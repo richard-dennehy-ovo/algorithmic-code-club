@@ -22,7 +22,7 @@ object Main {
   private def part1(): Int = {
     val input =
       Source
-        .fromResource("day 15 part 1.txt")
+        .fromResource("2016/15/part 1.txt")
         .getLines()
         .map(Disc.parse)
         .toVector
@@ -35,7 +35,7 @@ object Main {
   private def part2(): Int = {
     val input =
       Source
-        .fromResource("day 15 part 1.txt")
+        .fromResource("2016/15/part 1.txt")
         .getLines()
         .map(Disc.parse)
         .toVector

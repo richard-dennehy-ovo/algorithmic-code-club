@@ -1,3 +1,5 @@
+package aoc2016.day11
+
 import Component.{Generator, Microchip}
 
 import java.time.Instant
