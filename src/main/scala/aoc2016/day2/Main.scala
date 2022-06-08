@@ -1,4 +1,4 @@
-package aoc2017.day2
+package aoc2016.day2
 
 import scala.io.Source
 
@@ -29,7 +29,7 @@ object Main {
 
   private def code(fileName: String, initialState: State) = {
     val (_, code) = Source
-      .fromResource(s"2017/2/$fileName.txt")
+      .fromResource(s"2016/2/$fileName.txt")
       .getLines()
       .foldLeft((initialState, "")) { case ((state, keys), instructions) =>
         val newState =
