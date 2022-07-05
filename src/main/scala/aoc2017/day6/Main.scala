@@ -46,8 +46,6 @@ case class Memory(banks: Vector[Int]) {
     val remainder = blocks % banks.size
     val wrapIndex = (largest + remainder) % banks.size
 
-//    println(s"Distributing $blocks blocks from $largest by putting $each into each bank, and one into in banks ${largest + 1} around to $wrapIndex")
-
     Memory(
       banks.zipWithIndex.map { case (size, index) =>
         if (index == largest) {
