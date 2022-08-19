@@ -6,103 +6,75 @@ import scala.io.Source
 object Main {
   def main(args: Array[String]): Unit = {
     val examples = Map(
-      "ne,ne,ne" -> 3,
-      "ne,ne,sw,sw" -> 0,
+//      "ne,ne,ne" -> 3,
+//      "ne,ne,sw,sw" -> 0,
       "ne,ne,s,s" -> 2,
-      "se,sw,se,sw,sw" -> 3
+//      "se,sw,se,sw,sw" -> 3
     )
 
     examples.foreach { case (input, expected) =>
-      val steps = minSteps(input)
-      assert(expected == steps)
+      val result = input.split(",").map(Directions.parse)
+        .reduce(_ + _)
+      assert(minSteps(result) == expected)
     }
 
-    val part1 = Source.fromResource("2017/11/part1.txt").mkString
-    println(s"part1: ${minSteps(part1)}")
+    val part1Input = Source.fromResource("2017/11/part1.txt").mkString
+    val (p1, p2) = part1Input.split(",").map(Directions.parse).foldLeft(Vec2(0.0, 0.0) -> 0) { case ((location, maxDistance), direction) =>
+      val newLocation = location + direction
+      val distance = minSteps(newLocation)
+      (newLocation, math.max(maxDistance, distance))
+    }
+    println(s"part1: ${minSteps(p1)}")
+    println(s"part2: $p2")
   }
 
-  private val simplifications = Seq(
-    Rule(Direction.NorthWest, Direction.SouthEast, Adjacency(Direction.NorthEast, Direction.North), Adjacency(Direction.South, Direction.SouthWest)),
-    Rule(Direction.North, Direction.South, Adjacency(Direction.SouthWest, Direction.NorthWest), Adjacency(Direction.SouthEast, Direction.NorthEast)),
-    Rule(Direction.NorthEast, Direction.SouthWest, Adjacency(Direction.NorthWest, Direction.North), Adjacency(Direction.South, Direction.SouthEast)),
-    Rule(Direction.SouthEast, Direction.NorthWest, Adjacency(Direction.North, Direction.NorthEast), Adjacency(Direction.SouthWest, Direction.South)),
-    Rule(Direction.South, Direction.North, Adjacency(Direction.NorthEast, Direction.SouthEast), Adjacency(Direction.NorthEast, Direction.SouthEast)),
-    Rule(Direction.SouthWest, Direction.NorthEast, Adjacency(Direction.SouthEast, Direction.South), Adjacency(Direction.North, Direction.NorthWest)),
-  )
-
-  private def minSteps(input: String) = {
-    @tailrec def simplify(state: Map[Direction, Int]): Map[Direction, Int] = {
-      val updated = simplifications.foldLeft(state) { case (state, rule) => rule.applyTo(state) }
-      if (updated != state) {
-        simplify(updated)
+  def minSteps(vec2: Vec2): Int = {
+    @tailrec def acc(steps: Int, remaining: Vec2): Int = {
+      val epsilon = Math.ulp(1.0.toFloat)
+      if (remaining.x <= epsilon && remaining.y <= epsilon) {
+        steps
       } else {
-        state
+        val dir = remaining match {
+          case Vec2(x, y) if x > epsilon && y > epsilon => Directions.NorthEast
+          case Vec2(x, y) if x < -epsilon && y > epsilon => Directions.NorthWest
+          case Vec2(_, y) if y > epsilon => Directions.North
+          case Vec2(x, _) if x > epsilon => Directions.SouthEast
+          case Vec2(x, _) if x < -epsilon => Directions.SouthWest
+          case Vec2(_, _) => Directions.South
+        }
+        acc(steps + 1, remaining - dir)
       }
     }
 
-    val initial: Map[Direction, Int] = Map(
-      Direction.NorthWest -> 0,
-      Direction.NorthEast -> 0,
-      Direction.North -> 0,
-      Direction.SouthEast -> 0,
-      Direction.South -> 0,
-      Direction.SouthWest -> 0,
-    )
-    val state = input.split(",").map(Direction.parse).foldLeft(initial)(_.updatedWith(_)(_.map(_ + 1)))
-
-    val simplified = simplify(state)
-    simplified.values.foldLeft(0) { case (sum, steps) =>
-      assert(steps >= 0)
-      sum + steps
-    }
+    acc(0, vec2)
   }
 
-  case class Rule(matchDirection: Direction, inverse: Direction, adjacentLeft: Adjacency, adjacentRight: Adjacency) {
-    def applyTo(state: Map[Direction, Int]): Map[Direction, Int] = if (state(matchDirection) > 0) {
-      if (state(inverse) > 0) {
-        val eliminated = math.min(state(matchDirection), state(inverse))
-        state
-          .updatedWith(matchDirection)(_.map(_ - eliminated))
-          .updatedWith(inverse)(_.map(_ - eliminated))
-      } else if (state(adjacentLeft.matchDirection) > 0) {
-        val merged = math.min(state(matchDirection), state(adjacentLeft.matchDirection))
-        state
-          .updatedWith(matchDirection)(_.map(_ - merged))
-          .updatedWith(adjacentLeft.matchDirection)(_.map(_ - merged))
-          .updatedWith(adjacentLeft.replace)(_.map(_ + merged))
-      } else if (state(adjacentRight.matchDirection) > 0) {
-        val merged = math.min(state(matchDirection), state(adjacentRight.matchDirection))
-        state
-          .updatedWith(matchDirection)(_.map(_ - merged))
-          .updatedWith(adjacentRight.matchDirection)(_.map(_ - merged))
-          .updatedWith(adjacentRight.replace)(_.map(_ + merged))
-      } else {
-        state
-      }
-    } else {
-      state
-    }
+  case class Vec2(x: Double, y: Double) {
+    def +(other: Vec2): Vec2 = Vec2(x + other.x, y + other.y)
+    def -(other: Vec2): Vec2 = Vec2(x - other.x, y - other.y)
+    def magnitude: Double = Math.sqrt(x * x + y * y)
   }
-  case class Adjacency(matchDirection: Direction, replace: Direction)
 
-  sealed trait Direction
-  object Direction {
-    case object NorthWest extends Direction
-    case object North extends Direction
-    case object NorthEast extends Direction
-    case object SouthWest extends Direction
-    case object South extends Direction
-    case object SouthEast extends Direction
+  object Vec2 {
+    def fromDegrees(degrees: Double): Vec2 = Vec2(math.cos(degrees.toRadians), math.sin(degrees.toRadians))
+  }
 
-    def parse(input: String): Direction = input.trim match {
-      case "nw" => NorthWest
-      case "n"  => North
+  object Directions {
+    val NorthEast = Vec2.fromDegrees(30)
+    val North = Vec2(0.0, 1.0)
+    val NorthWest = Vec2.fromDegrees(150)
+    val SouthWest = Vec2.fromDegrees(210)
+    val South = Vec2(0.0, -1.0)
+    val SouthEast = Vec2.fromDegrees(330)
+
+    def parse(input: String): Vec2 = input.trim match {
       case "ne" => NorthEast
-      case "se" => SouthEast
-      case "s"  => South
+      case "n" => North
+      case "nw" => NorthWest
       case "sw" => SouthWest
-      case _ =>
-        throw new IllegalArgumentException(s"Unexpected direction $input")
+      case "s" => South
+      case "se" => SouthEast
+      case _ => throw new IllegalArgumentException(s"Unexpected direction $input")
     }
   }
 }
