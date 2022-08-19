@@ -52,7 +52,6 @@ object Main {
   case class Vec2(x: Double, y: Double) {
     def +(other: Vec2): Vec2 = Vec2(x + other.x, y + other.y)
     def -(other: Vec2): Vec2 = Vec2(x - other.x, y - other.y)
-    def magnitude: Double = Math.sqrt(x * x + y * y)
   }
 
   object Vec2 {
