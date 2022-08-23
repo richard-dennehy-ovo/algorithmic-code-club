@@ -9,26 +9,31 @@ object Main {
                     |4: 4
                     |6: 4""".stripMargin
     val exampleFirewall = example.split("\n").map(Layer.parse)
-    assert(exampleFirewall.map(l => l.severity(l.depth)).sum == 24)
+    assert(exampleFirewall.map(l => l.severity(l.depth).getOrElse(0)).sum == 24)
+    assert(
+      Iterator.iterate(0)(_ + 1).find { n =>
+        exampleFirewall.forall(l => l.severity(n + l.depth).isEmpty)
+      }.get == 10
+    )
 
-    val part1Firewall = Source.fromResource("2017/13/part1.txt").getLines().map(Layer.parse)
-    val part1 = part1Firewall.map(l => l.severity(l.depth)).sum
+    val part1Firewall = Source.fromResource("2017/13/part1.txt").getLines().map(Layer.parse).toVector
+    val part1 = part1Firewall.map(l => l.severity(l.depth).getOrElse(0)).sum
+    assert(part1 == 1904)
     println(s"part 1: $part1")
+
+    val part2 = Iterator.iterate(0)(_ + 1).find { n =>
+      part1Firewall.forall(l => l.severity(n + l.depth).isEmpty)
+    }.get
+    println(s"part 2: $part2")
   }
 
   case class Layer(depth: Int, range: Int) {
-    def severity(at: Int): Int = {
-      // stupid concise code that requires a massive comment to explain:
-      // e.g. for range = 3
-      // - at % ((range - 1) * 2) to map into 0..4
-      // - x - (range - 1) to map into -2..2
-      // - x.abs to map into 2..0..2
-      // - (range - 1) - x to map into 0..2..0
-      val position = (range - 1) - (at % ((range - 1) * 2) - (range - 1)).abs
-      if (position == 0) {
-        depth * range
+    def severity(at: Int): Option[Int] = {
+      val scanInterval: Int = (range - 1) * 2
+      if (at % scanInterval == 0) {
+        Some(depth * range)
       } else {
-        0
+        None
       }
     }
   }
