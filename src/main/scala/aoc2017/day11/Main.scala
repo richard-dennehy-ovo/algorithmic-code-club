@@ -6,16 +6,17 @@ import scala.io.Source
 object Main {
   def main(args: Array[String]): Unit = {
     val examples = Map(
-//      "ne,ne,ne" -> 3,
-//      "ne,ne,sw,sw" -> 0,
+      "ne,ne,ne" -> 3,
+      "ne,ne,sw,sw" -> 0,
       "ne,ne,s,s" -> 2,
-//      "se,sw,se,sw,sw" -> 3
+      "se,sw,se,sw,sw" -> 3
     )
 
     examples.foreach { case (input, expected) =>
       val result = input.split(",").map(Directions.parse)
         .reduce(_ + _)
-      assert(minSteps(result) == expected)
+      val steps = minSteps(result)
+      assert(steps == expected, s"$steps != $expected")
     }
 
     val part1Input = Source.fromResource("2017/11/part1.txt").mkString
@@ -31,7 +32,7 @@ object Main {
   def minSteps(vec2: Vec2): Int = {
     @tailrec def acc(steps: Int, remaining: Vec2): Int = {
       val epsilon = Math.ulp(1.0.toFloat)
-      if (remaining.x <= epsilon && remaining.y <= epsilon) {
+      if (remaining.x.abs <= epsilon && remaining.y.abs <= epsilon) {
         steps
       } else {
         val dir = remaining match {
