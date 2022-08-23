@@ -2,31 +2,31 @@ package aoc2017.day14
 
 object Main {
   def main(args: Array[String]): Unit = {
-    def generators(seedA: Long, seedB: Long, factorA: Int = 1, factorB: Int = 1) = {
-      Iterator
-        .iterate(seedA)(n => n * 16807 % Int.MaxValue)
-        .filter(_ % factorA == 0)
-        .zip(Iterator.iterate(seedB)(n => n * 48271 % Int.MaxValue).filter(_ % factorB == 0))
-        .drop(1)
-    }
+    def generator(seed: Long, multiplier: Long): Iterator[Long] = Iterator.iterate(seed)(n => n * multiplier % Int.MaxValue).drop(1)
+    val generatorAGenerator = generator(_, 16807)
+    val generatorBGenerator = generator(_, 48271)
+
     def countMatches(gens: Iterator[(Long, Long)], iterations: Int) = {
       gens.take(iterations).count { case (a, b) =>
         a % 65536 == b % 65536
       }
     }
 
-    val exampleGens = () => generators(65, 8921)
+    val exampleGens = () => generatorAGenerator(65).zip(generatorBGenerator(8921))
     assert(countMatches(exampleGens(), 5) == 1)
 //    assert(countMatches(exampleGens(), 40 * 1000 * 1000) == 588)
 
-    val actualGens = () => generators(883, 879)
+    val actualGens = () => generatorAGenerator(883).zip(generatorBGenerator(879))
     val part1 = countMatches(actualGens(), 40 * 1000 * 1000)
     println(s"part 1: $part1")
 
-    val p2ExampleGens = () => generators(65, 8921, 4, 8)
+    def filteredAGenerator(seed: Long) = generatorAGenerator(seed).filter(_ % 4 == 0)
+    def filteredBGenerator(seed: Long) = generatorBGenerator(seed).filter(_ % 8 == 0)
+
+    val p2ExampleGens = () => filteredAGenerator(65).zip(filteredBGenerator(8921))
     assert(countMatches(p2ExampleGens(), 5 * 1000 * 1000) == 309)
 
-    val p2ActualGens = () => generators(883, 879, 4, 8)
+    val p2ActualGens = () => filteredAGenerator(883).zip(filteredBGenerator(879))
     val part2 = countMatches(p2ActualGens(), 5 * 1000 * 1000)
     println(s"part 2: $part2")
   }
