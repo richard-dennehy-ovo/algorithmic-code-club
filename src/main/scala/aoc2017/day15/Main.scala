@@ -1,4 +1,4 @@
-package aoc2017.day14
+package aoc2017.day15
 
 object Main {
   def main(args: Array[String]): Unit = {
