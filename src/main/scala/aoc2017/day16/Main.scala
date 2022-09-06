@@ -1,6 +1,5 @@
 package aoc2017.day16
 
-import java.time.Instant
 import scala.io.Source
 import scala.language.postfixOps
 
