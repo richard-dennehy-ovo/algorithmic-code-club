@@ -1,6 +1,5 @@
 package aoc2017.day17
 
-import java.time.Instant
 import scala.annotation.tailrec
 
 object Main {
@@ -15,7 +14,7 @@ object Main {
 
   private def bruteForcePart1(increment: Int): Int = {
     val filled = (1 to 2017 foldLeft State(Vector(0), 0)) { case (State(buffer, index), nextValue) =>
-      if (nextValue % 10000 == 0) println(s"${Instant.now}: $nextValue")
+//      if (nextValue % 10000 == 0) println(s"${Instant.now}: $nextValue")
       val nextIndex = ((index + increment) % buffer.size) + 1
       val (front, back) = buffer.splitAt(nextIndex)
       State(front.appended(nextValue) ++ back, nextIndex)
