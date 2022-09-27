@@ -2,7 +2,6 @@ package aoc2017.day18
 
 import aoc2017.day18.Main.Instruction.RegOrValue
 
-import java.time.Instant
 import scala.io.Source
 
 object Main {
