@@ -4,5 +4,6 @@ ThisBuild / scalaVersion := "2.13.8"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "algorithmic-code-club"
+    name := "algorithmic-code-club",
+    scalacOptions += "-deprecation"
   )

@@ -37,7 +37,6 @@ object Main {
       seen: String
   ) {
     def next(diagram: Diagram): Option[State] = {
-//      println(s"(${this.x}, ${this.y}): ${diagram.get(this.x, this.y)}")
       val (x, y) = direction match {
         case Up    => (this.x, this.y - 1)
         case Down  => (this.x, this.y + 1)
