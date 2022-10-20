@@ -11,20 +11,20 @@ object Main {
 
     val exampleRules = exampleRulesRaw.linesIterator.map(Rule.parse).toVector
 
-//    val expanded = Grid.initial
-//    Vector(
-//      "original" -> expanded,
-//      "rotL" -> expanded.rotateLeft,
-//      "rotR" -> expanded.rotateRight,
-//      "flipH" -> expanded.flipH,
-//      "flipV" -> expanded.flipV,
-//      "rotR2" -> expanded.rotateRight.rotateRight,
-//      "rotR flipV" -> expanded.rotateRight.flipV,
-//      "rotR flipH" -> expanded.rotateRight.flipH,
-//      "rotL flipV" -> expanded.rotateLeft.flipV,
-//      "rotL flipH" -> expanded.rotateLeft.flipH,
-//    ).distinctBy(_._2.toString)
-//      .foreach(it => println(it._1))
+    val expanded = Grid.initial
+    Vector(
+      "original" -> expanded,
+      "rotL" -> expanded.rotateLeft,
+      "rotR" -> expanded.rotateRight,
+      "flipH" -> expanded.flipH,
+      "flipV" -> expanded.flipV,
+      "rotR2" -> expanded.rotateRight.rotateRight,
+      "rotR flipV" -> expanded.rotateRight.flipV,
+      "rotR flipH" -> expanded.rotateRight.flipH,
+      "rotL flipV" -> expanded.rotateLeft.flipV,
+      "rotL flipH" -> expanded.rotateLeft.flipH,
+    ).distinctBy(_._2)
+      .foreach(it => println(it._1))
 
     assert(expand(2, exampleRules).on == 12)
 
@@ -53,7 +53,7 @@ object Main {
   }
 
   case class Grid(cells: Vector[Vector[Boolean]]) {
-    def on: Int = cells.map(_.count(identity)).sum
+    val on: Int = cells.map(_.count(identity)).sum
     override def toString: String =
       cells.map(_.map(if (_) '#' else '.').mkString).mkString("\n")
 
@@ -149,7 +149,7 @@ object Main {
 
   case class Rule(input: Grid, output: Grid) {
     def matches(grid: Grid): Boolean = {
-      Vector(
+      grid.on == input.on && Iterator(
         grid,
         grid.rotateLeft,
         grid.rotateRight,
