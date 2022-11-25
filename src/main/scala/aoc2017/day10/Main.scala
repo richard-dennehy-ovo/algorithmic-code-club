@@ -5,12 +5,16 @@ import scala.io.Source
 object Main {
   def main(args: Array[String]): Unit = {
     val exampleInput = Vector(3, 4, 1, 5)
-    val example = exampleInput.foldLeft(State((0 to 4).toVector, 0, 0)) { case (state, step) => state.next(step) }
+    val example = exampleInput.foldLeft(State(5)) { case (state, step) => state.next(step) }
     println(example.values(0) * example.values(1))
 
-    val input = Source.fromResource("2017/10/part1.txt").getLines().flatMap(_.split(",").map(_.toInt))
-    val p1 = input.foldLeft(State((0 to 255).toVector, 0, 0)) { case (state, step) => state.next(step) }
+    val p1Input = Source.fromResource("2017/10/part1.txt").getLines().flatMap(_.split(",").map(_.toInt))
+    val p1 = p1Input.foldLeft(State(256)) { case (state, step) => state.next(step) }
     println(p1.values(0) * p1.values(1))
+
+    val p2Input = Source.fromResource("2017/10/part1.txt").filterNot(_.isWhitespace).map(_.toInt).toVector ++ Vector(17, 31, 73, 47, 23)
+    val p2State = Iterator.continually(p2Input).take(64).flatten.foldLeft(State(256)) { case (state, step) => state.next(step) }
+    println(p2State.denseHash.map(_.toHexString.prepended('0').takeRight(2)).mkString)
   }
 
   case class State(values: Vector[Int], position: Int, skip: Int) {
@@ -34,5 +38,11 @@ object Main {
 
       State(newValues, newPosition, newSkip)
     }
+
+    def denseHash: Vector[Int] = values.grouped(16).map(_.reduce(_ ^ _)).toVector
+  }
+
+  object State {
+    def apply(size: Int): State = State((0 until size).toVector, 0, 0)
   }
 }
